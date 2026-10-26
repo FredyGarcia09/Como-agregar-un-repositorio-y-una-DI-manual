@@ -1,0 +1,63 @@
+REPORTE DE PRÁCTICA: APLICACIÓN MARS PHOTOS
+
+1. INTRODUCCIÓN A LA PRÁCTICA
+
+En esta práctica se trabajó con la aplicación Mars Photos desarrollada para Android utilizando Jetpack Compose y Kotlin. El propósito principal del proyecto fue conectar la aplicación a un servicio web en internet para obtener datos de un servidor externo y mostrarlos en pantalla, trabajando con imágenes y datos reales de las misiones rover de la NASA en Marte.
+
+Durante el desarrollo se implementó una arquitectura basada en la separación de responsabilidades. En lugar de hacer las consultas directamente en la vista, se utilizaron capas para la red, un repositorio para la gestión de datos, un contenedor para la inyección de dependencias manual y un ViewModel que administra los estados de la interfaz. Esto permite que la aplicación responda de manera adecuada mientras los datos se descargan, mostrando indicadores de carga o mensajes de error en caso de que falle la conexión.
+
+
+2. DESARROLLO Y EXPLICACIÓN DE LO REALIZADO
+
+El proyecto se estructuró de manera modular para mantener el código ordenado y facilitar futuras modificaciones. A continuación se explican los puntos clave que se implementaron:
+
+- Configuración de dependencias y permisos: Se habilitó el permiso de internet en el archivo AndroidManifest y se agregaron las librerías necesarias en Gradle, principalmente Retrofit para las solicitudes HTTP, Kotlinx Serialization para convertir el JSON recibido en objetos de Kotlin y Coil para el soporte de imágenes.
+
+- Modelo de datos: Se creó la clase MarsPhoto con los campos que entrega la API (el identificador id y la dirección web de la imagen imgSrc), utilizando anotaciones para que los nombres de los atributos coincidan con los datos del servidor.
+
+- Capa de red y Repositorio: Se definió la interfaz MarsApiService donde se configuró la petición GET al endpoint de fotos. Luego se implementó el patrón de repositorio con la interfaz MarsPhotosRepository y su clase concreta NetworkMarsPhotosRepository, la cual se encarga de llamar al servicio y entregar la lista de fotos. De esta forma, el resto de la aplicación no necesita saber los detalles técnicos de la conexión web.
+
+- Inyección de dependencias manual: En el archivo AppContainer se configuró la instancia base de Retrofit y el repositorio, y se integró dentro de la clase de aplicación MarsPhotosApplication. Esto asegura que la misma configuración se comparta en toda la app sin duplicar código.
+
+- Manejo de estados en el ViewModel: Se creó la clase MarsViewModel con un estado sellado llamado MarsUiState, el cual tiene tres posibles valores: Loading (cargando), Success (éxito) y Error (fallo). Al iniciar la app, el ViewModel ejecuta una corrutina en segundo plano que consulta el repositorio. Si la consulta tiene éxito, guarda el resultado con el número de fotos obtenidas; si ocurre un problema de red, pasa al estado de error.
+
+- Interfaz gráfica con Compose: En HomeScreen se utilizó una estructura condicional que evalúa el estado del ViewModel. Si está cargando muestra una imagen de espera; si falla la conexión muestra una pantalla con un icono de error y aviso; y si la consulta fue exitosa, muestra el mensaje con la cantidad de fotos recibidas de Marte.
+
+[ESPACIO PARA CAPTURA DE PANTALLA: Pantalla principal de la aplicación en ejecución]
+(Pegar aquí la captura de pantalla del emulador o dispositivo físico mostrando la aplicación abierta con el mensaje exitoso en el centro: "Success: X Mars photos retrieved", donde X representa el número de fotos obtenidas desde el servidor, junto con la barra superior de la app con el título "Mars Photos").
+
+[ESPACIO PARA CAPTURA DE PANTALLA ADICIONAL: Estado de carga o vista previa]
+(Pegar aquí una captura donde se observe la pantalla de carga con la animación/icono de espera de la app, o bien la vista previa de Android Studio donde se aprecian las funciones composables LoadingScreen, ErrorScreen y ResultScreen).
+
+
+2.1. PRUEBAS UNITARIAS (TESTS)
+
+Para comprobar que la lógica de la aplicación funciona correctamente sin depender de una conexión activa a internet ni de un emulador, se realizaron pruebas unitarias utilizando JUnit y herramientas de prueba para corrutinas. Para evitar llamar al servidor real durante las pruebas, se utilizó una fuente de datos simulada (FakeDataSource) y versiones falsas del servicio y repositorio.
+
+Las pruebas implementadas en el proyecto son las siguientes:
+
+- Prueba del repositorio (NetworkMarsRepositoryTest):
+La prueba se llama "networkMarsPhotosRepository_getMarsPhotos_verifyPhotoList". Lo que hace este test es verificar que el repositorio NetworkMarsPhotosRepository devuelva exactamente la lista de fotos esperada cuando se comunica con el servicio de red. Para ello se utilizó FakeMarsApiService, asegurando que el método getMarsPhotos procese la información correctamente.
+
+- Prueba del ViewModel (MarsViewModelTest):
+La prueba se llama "marsViewModel_getMarsPhotos_verifyMarsUiStateSuccess". Este test comprueba que al inicializarse el MarsViewModel con un repositorio simulado, el estado de la interfaz (marsUiState) cambie correctamente al estado de éxito (MarsUiState.Success) y que el mensaje contenga el número exacto de fotos simuladas. Además, incluye una regla de prueba (TestDispatcherRule) para controlar la ejecución de corrutinas en el hilo principal durante el test.
+
+[ESPACIO PARA CAPTURA DE PANTALLA: Resultados de las pruebas unitarias]
+(Pegar aquí la captura de pantalla de Android Studio con el panel inferior de "Run" o "Test" abierto, donde se aprecien los dos archivos de prueba "NetworkMarsRepositoryTest" y "MarsViewModelTest" ejecutados y aprobados con sus palomitas o iconos verdes, o en su defecto la terminal con el resultado "BUILD SUCCESSFUL" al ejecutar el comando gradlew test).
+
+
+3. EVIDENCIA DE FUNCIONAMIENTO EN MÁQUINA
+
+Para respaldar la autenticidad del trabajo y comprobar que la aplicación compila y se ejecuta en mi equipo de cómputo local, se presenta la siguiente evidencia.
+
+[ESPACIO PARA CAPTURA DE PANTALLA: Evidencia de ejecución en la computadora local]
+(Pegar aquí una captura de pantalla completa de tu monitor donde se vea toda la pantalla de tu computadora. Debe aparecer abierta la ventana de Android Studio con el proyecto Mars Photos cargado en el explorador de archivos izquierdo, junto a la ventana del emulador de Android (o la pantalla duplicada de tu celular físico) con la aplicación funcionando, y en la parte inferior o lateral que se alcance a ver la barra de tareas de tu sistema operativo con la hora y fecha del día para confirmar que el proyecto corre directamente en tu equipo).
+
+
+4. CONCLUSIONES
+
+El desarrollo de esta práctica me permitió entender de manera práctica cómo se manejan las conexiones a internet en aplicaciones Android modernas. Trabajar con Retrofit y la serialización de datos facilita mucho el consumo de servicios web, ya que el procesamiento de las respuestas se vuelve directo y requiere menos código manual.
+
+Otro punto valioso fue la aplicación del patrón repositorio y la separación de responsabilidades. Al principio puede parecer que se crean muchos archivos entre interfaces, clases de red y contenedores, pero al momento de hacer las pruebas unitarias se nota la ventaja, ya que pudimos probar tanto el repositorio como el ViewModel utilizando datos simulados sin tocar el servidor real ni requerir un teléfono conectado.
+
+Finalmente, el manejo de estados en Jetpack Compose mediante una interfaz sellada hace que el flujo de la interfaz sea muy limpio y predecible, evitando pantallas en blanco o bloqueos mientras se descargan los datos. En general, la práctica dejó bases sólidas sobre cómo estructurar proyectos que consuman APIs externas de forma ordenada y profesional.
